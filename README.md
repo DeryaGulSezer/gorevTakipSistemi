@@ -203,4 +203,50 @@ Derya Gül Sezer
 
 
 
+## 🌐 English Summary
+Below is a brief overview of the project for international viewers.
 
+
+
+📋 About the Project
+
+This is a hierarchical Task Management System with three roles: Director, Manager, and Team Member. Each role can create, assign, and track tasks within its authority level.
+
+🎯 Features
+
+Role-based access (Director, Manager, Team Member)
+
+Task creation and assignment
+
+Priority levels (High, Medium, Low)
+
+Task status tracking (Not Started, In Progress, Completed)
+
+Statistics and reporting
+
+🛠️ Technologies
+
+Backend: Java 17, Spring Boot, Spring Data JPA, MS SQL Server, Lombok, Swagger/OpenAPI
+Frontend: Angular, TypeScript, RxJS, SCSS
+
+🚀 Setup
+
+Backend: configure application.properties, run with Maven
+
+Frontend: install dependencies with npm install, run with ng serve
+
+👥 Default Users
+
+Director → director / director123
+
+Manager → manager / manager123
+
+Team Member → teammember / team123
+
+🔒 Security
+
+JWT Authentication
+
+Role-Based Access Control (RBAC)
+
+SQL Injection protection with JPA
