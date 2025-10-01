@@ -1,0 +1,376 @@
+<div class="user-management-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>👥 Kullanıcı Yönetimi</h1>
+      <p>Sistem kullanıcılarını yönetin</p>
+    </div>
+    <div class="header-actions">
+      <button 
+        class="btn btn-primary" 
+        (click)="toggleCreateForm()"
+        [disabled]="loading">
+        <span *ngIf="!showCreateForm">➕ Yeni Kullanıcı</span>
+        <span *ngIf="showCreateForm">❌ İptal</span>
+      </button>
+      <button 
+        class="btn btn-secondary" 
+        (click)="loadUsers()"
+        [disabled]="loading">
+        🔄 Yenile
+      </button>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tab-navigation">
+    <button 
+      class="tab-btn"
+      [class.active]="activeTab === 'users'"
+      (click)="switchTab('users')">
+      👥 Kullanıcı Yönetimi ({{ users.length }})
+    </button>
+    <button 
+      class="tab-btn"
+      [class.active]="activeTab === 'reports'"
+      (click)="switchTab('reports')">
+      ✅ Tamamlanan Görevler ({{ reportedTasks.length }})
+    </button>
+  </div>
+
+  <!-- Mesajlar -->
+  <div class="messages" *ngIf="error || success">
+    <div class="alert alert-error" *ngIf="error">
+      <span class="alert-icon">⚠️</span>
+      {{ error }}
+    </div>
+    <div class="alert alert-success" *ngIf="success">
+      <span class="alert-icon">✅</span>
+      {{ success }}
+    </div>
+  </div>
+
+  <!-- Users Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'users'">
+    <!-- Kullanıcı Oluşturma/Düzenleme Formu -->
+    <div class="form-section" *ngIf="showCreateForm">
+    <div class="form-card">
+      <div class="form-header">
+        <h2>{{ editingUser ? '✏️ Kullanıcı Düzenle' : '➕ Yeni Kullanıcı Oluştur' }}</h2>
+      </div>
+      
+      <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="username">Kullanıcı Adı *</label>
+            <input 
+              type="text" 
+              id="username"
+              formControlName="username"
+              class="form-control"
+              [class.error]="isFieldInvalid('username')"
+              placeholder="kullanici_adi">
+            <div class="error-message" *ngIf="isFieldInvalid('username')">
+              {{ getFieldError('username') }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input 
+              type="email" 
+              id="email"
+              formControlName="email"
+              class="form-control"
+              [class.error]="isFieldInvalid('email')"
+              placeholder="email@domain.com">
+            <div class="error-message" *ngIf="isFieldInvalid('email')">
+              {{ getFieldError('email') }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fullName">Ad Soyad *</label>
+            <input 
+              type="text" 
+              id="fullName"
+              formControlName="fullName"
+              class="form-control"
+              [class.error]="isFieldInvalid('fullName')"
+              placeholder="Ad Soyad">
+            <div class="error-message" *ngIf="isFieldInvalid('fullName')">
+              {{ getFieldError('fullName') }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="role">Rol *</label>
+            <select 
+              id="role"
+              formControlName="role"
+              class="form-control"
+              [class.error]="isFieldInvalid('role')">
+              <option value="TEAM_MEMBER">👤 Ekip Üyesi</option>
+              <option value="MANAGER">👨‍💼 Müdür</option>
+            </select>
+            <div class="error-message" *ngIf="isFieldInvalid('role')">
+              {{ getFieldError('role') }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="password">
+              {{ editingUser ? 'Yeni Şifre (boş bırakılırsa değiştirilmez)' : 'Şifre *' }}
+            </label>
+            <input 
+              type="password" 
+              id="password"
+              formControlName="password"
+              class="form-control"
+              [class.error]="isFieldInvalid('password')"
+              placeholder="••••••••">
+            <div class="error-message" *ngIf="isFieldInvalid('password')">
+              {{ getFieldError('password') }}
+            </div>
+          </div>
+
+          <div class="form-group" *ngIf="userForm.get('role')?.value === 'MANAGER'">
+            <label for="managerType">Ne Müdürü? *</label>
+            <input 
+              type="text" 
+              id="managerType"
+              formControlName="managerType"
+              class="form-control"
+              [class.error]="isFieldInvalid('managerType')"
+              placeholder="Örn: Satış Müdürü, Yazılım Müdürü">
+            <div class="error-message" *ngIf="isFieldInvalid('managerType')">
+              Müdür tipi zorunludur.
+            </div>
+          </div>
+
+          <div class="form-group" *ngIf="userForm.get('role')?.value === 'TEAM_MEMBER'">
+            <label for="managerId">Müdür *</label>
+            <select 
+              id="managerId"
+              formControlName="managerId"
+              class="form-control"
+              [class.error]="isFieldInvalid('managerId')">
+              <option value="">Müdür seçiniz...</option>
+              <option *ngFor="let manager of managers" [value]="manager.id">
+                {{ manager.fullName || manager.username }} 
+                <span *ngIf="manager.managerType">({{ manager.managerType }})</span>
+              </option>
+            </select>
+            <div class="error-message" *ngIf="isFieldInvalid('managerId')">
+              Ekip üyesi için müdür seçimi zorunludur.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="loading || !userForm.valid">
+            <span *ngIf="!loading">{{ editingUser ? '💾 Güncelle' : '➕ Oluştur' }}</span>
+            <span *ngIf="loading">⏳ {{ editingUser ? 'Güncelleniyor...' : 'Oluşturuluyor...' }}</span>
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-secondary"
+            (click)="toggleCreateForm()"
+            [disabled]="loading">
+            ❌ İptal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Kullanıcı Listesi -->
+  <div class="list-section">
+    <div class="list-header">
+      <h2>📋 Kullanıcı Listesi</h2>
+      <span class="user-count">{{ users.length }} kullanıcı</span>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" *ngIf="loading && users.length === 0">
+      <div class="loading-spinner"></div>
+      <p>Kullanıcılar yükleniyor...</p>
+    </div>
+
+    <!-- Kullanıcı Tablosu -->
+    <div class="table-container" *ngIf="!loading || users.length > 0">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Kullanıcı Adı</th>
+            <th>Ad Soyad</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Müdür</th>
+            <th>Durum</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users; trackBy: trackByUserId" class="user-row">
+            <td class="user-id">{{ user.id }}</td>
+            <td class="user-username">
+              <strong>{{ user.username }}</strong>
+            </td>
+            <td class="user-fullname">{{ user.fullName }}</td>
+            <td class="user-email">{{ user.email }}</td>
+            <td class="user-role">
+              <span class="role-badge" [ngClass]="getRoleBadgeClass(user.role)">
+                {{ getRoleDisplayText(user.role) }}
+                <span *ngIf="user.role === 'MANAGER' && user.managerType" class="manager-subtype">({{ user.managerType }})</span>
+              </span>
+            </td>
+            <td class="user-manager">
+              <span class="manager-info">
+                {{ getManagerName(user) }}
+              </span>
+            </td>
+            <td class="user-status">
+              <span class="status-badge" [ngClass]="getUserStatusClass(user)">
+                {{ getUserStatusText(user) }}
+              </span>
+            </td>
+            <td class="user-actions">
+              <button 
+                class="btn btn-sm btn-edit"
+                (click)="editUser(user)"
+                [disabled]="loading"
+                title="Düzenle">
+                ✏️
+              </button>
+              <button 
+                class="btn btn-sm btn-delete"
+                (click)="openDeleteModal(user)"
+                [disabled]="loading || user.role === 'DIRECTOR'"
+                [title]="user.role === 'DIRECTOR' ? 'Direktör kullanıcıları silinemez' : 'Sil'">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="users.length === 0 && !loading">
+        <div class="empty-icon">👥</div>
+        <h3>Kullanıcı bulunamadı</h3>
+        <p>Henüz hiç kullanıcı bulunmuyor.</p>
+        <button class="btn btn-primary" (click)="toggleCreateForm()">
+          ➕ İlk kullanıcıyı oluştur
+        </button>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <!-- Silme Onay Modalı -->
+  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🗑️ Kullanıcıyı Sil</h3>
+        <button class="modal-close" (click)="closeDeleteModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>"{{ userToDelete?.username }}"</strong> kullanıcısını silmek istediğinizden emin misiniz?</p>
+        <p class="warning">⚠️ Bu işlem geri alınamaz!</p>
+      </div>
+      <div class="modal-actions">
+        <button 
+          class="btn btn-danger"
+          (click)="confirmDelete()"
+          [disabled]="loading">
+          <span *ngIf="!loading">🗑️ Evet, Sil</span>
+          <span *ngIf="loading">⏳ Siliniyor...</span>
+        </button>
+        <button 
+          class="btn btn-secondary"
+          (click)="closeDeleteModal()"
+          [disabled]="loading">
+          ❌ İptal
+        </button>
+      </div>
+    </div>
+  </div>
+  </div>
+  <!-- End of Users Tab -->
+
+  <!-- Reports Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'reports'">
+    <div class="reports-section">
+      <div class="reports-header">
+        <h2>✅ Tamamlanan Görevler</h2>
+        <p>Müdürlerin direktöre rapor ettiği tamamlanan görevleri görüntüleyin</p>
+      </div>
+
+      <!-- Reported Tasks List -->
+      <div class="reported-tasks-list" *ngIf="reportedTasks.length > 0">
+        <div class="table-container">
+          <table class="tasks-table">
+            <thead>
+              <tr>
+                <th>Görev Adı</th>
+                <th>Atanan Kişi</th>
+                <th>Öncelik</th>
+                <th>Durum</th>
+                <th>Açıklama</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let task of reportedTasks; trackBy: trackByTaskId">
+                <td class="task-name">{{ task.isim }}</td>
+                <td class="task-assignee">
+                  <span class="user-badge">
+                    {{ getAssignerName(task) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="priority-badge" [class]="getPriorityClass(task.priority)">
+                    {{ task.priority }}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" 
+                        [class.completed]="task.status === 'COMPLETED'"
+                        [class.archived]="task.status === 'ARCHIVED'">
+                    {{ task.status === 'COMPLETED' ? '✅ Tamamlandı' : 
+                       task.status === 'ARCHIVED' ? '📦 Arşivlendi' : task.status }}
+                  </span>
+                </td>
+                <td class="task-description">{{ task.description }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- No Reports -->
+      <div *ngIf="reportedTasks.length === 0" class="empty-state">
+        <div class="empty-icon">✅</div>
+        <h3>Henüz tamamlanan görev yok</h3>
+        <p>Müdürler görevlerini tamamlayıp direktöre rapor ettiklerinde burada görünecek</p>
+        <button 
+          class="btn btn-secondary"
+          (click)="loadReportedTasks()">
+          🔄 Yenile
+        </button>
+      </div>
+
+    </div>
+  </div>
+  <!-- End of Reports Tab -->
+
+</div>

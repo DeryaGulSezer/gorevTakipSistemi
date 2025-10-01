@@ -1,0 +1,29 @@
+spring.application.name=gorevTakip
+
+# MS SQL Server Configuration
+spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=YOUR_DATABASE_NAME;trustServerCertificate=true
+spring.datasource.username=YOUR_USERNAME
+spring.datasource.password=YOUR_PASSWORD
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+# JPA/Hibernate Configuration
+# UYARI: 'create' tabloyu her açılışta silip yeniden oluşturur (tüm veriler gider)
+# Kalıcı veri için 'update' kullanın veya Flyway/Liquibase ile versiyonlayın
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# Connection Pool Configuration
+spring.datasource.hikari.maximum-pool-size=20
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.connection-timeout=20000
+
+# Swagger/OpenAPI Configuration
+springdoc.api-docs.path=/api-docs
+springdoc.swagger-ui.path=/swagger-ui.html
+springdoc.swagger-ui.enabled=true
+springdoc.packages-to-scan=com.erdemirProje.gorevTakip.controller
+
+
+
+

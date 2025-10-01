@@ -1,0 +1,52 @@
+/* Global Styles with Custom Color Palette */
+
+:root {
+  // Yeni Renk Paleti
+  --primary-blue: #84a5c8;        // Ana mavi ton
+  --secondary-blue: #a3bcdc;       // İkincil mavi ton
+  --dark-blue: #304c65;           // Koyu mavi ton
+  --accent-rose: #9c6272;         // Vurgu rengi (pembe-kırmızı)
+  --light-blue: #aebed4;          // Açık mavi ton
+  --dark-brown: #4c393d;          // Koyu kahverengi ton
+
+  // Semantic Colors (Daha dengeli dağılım)
+  --primary-color: var(--accent-rose);      // Ana renk olarak sıcak ton
+  --secondary-color: var(--primary-blue);   // İkincil renk mavi
+  --accent-color: var(--dark-brown);        // Vurgu rengi kahverengi
+  --text-primary: var(--dark-blue);
+  --text-secondary: var(--dark-brown);      // İkincil text sıcak ton
+  --bg-primary: #ffffff;
+  --bg-secondary: var(--light-blue);
+  --bg-accent: var(--secondary-blue);
+  --bg-warm: rgba(156, 98, 114, 0.05);     // Sıcak background
+  --border-color: var(--light-blue);
+  --border-warm: var(--accent-rose);        // Sıcak border
+  
+  // Priority Colors (Daha çeşitli)
+  --priority-high: var(--accent-rose);      // Pembe-kırmızı
+  --priority-medium: var(--dark-brown);     // Kahverengi  
+  --priority-low: var(--secondary-blue);    // Açık mavi
+  
+  // Success/Error Colors (Palete uygun)
+  --success-color: #6b8e23;                // Doğal yeşil ton
+  --error-color: var(--accent-rose);
+  --warning-color: var(--dark-brown);      // Kahverengi warning
+}
+
+// Global Reset ve Base Styles
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(135deg, var(--light-blue) 0%, var(--secondary-blue) 100%);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+// Smooth scrolling
+html {
+  scroll-behavior: smooth;
+}

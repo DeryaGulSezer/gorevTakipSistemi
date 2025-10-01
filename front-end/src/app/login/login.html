@@ -1,0 +1,99 @@
+<div class="login-container">
+  <!-- Login Card -->
+  <div class="login-card">
+    <!-- Header -->
+    <div class="login-header">
+      <div class="logo">
+        <span class="logo-icon">📋</span>
+        <h1>Görev Takip Sistemi</h1>
+      </div>
+      <p class="subtitle">Hesabınıza giriş yapın</p>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="alert alert-error">
+      <div class="alert-content">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-text">{{ error }}</div>
+        <button class="alert-close" (click)="error = null">×</button>
+      </div>
+    </div>
+
+    <!-- Login Form -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      
+      <!-- Username/Email Field -->
+      <div class="form-group">
+        <label for="usernameOrEmail" class="form-label">
+          <span class="label-text">Kullanıcı Adı veya Email</span>
+          <span class="required">*</span>
+        </label>
+        <div class="input-wrapper">
+          <span class="input-icon">👤</span>
+          <input
+            type="text"
+            id="usernameOrEmail"
+            formControlName="usernameOrEmail"
+            class="form-input"
+            [class.invalid]="isFieldInvalid('usernameOrEmail')"
+            [class.valid]="isFieldValid('usernameOrEmail')"
+            placeholder="kullanici@example.com"
+            autocomplete="username">
+        </div>
+        <div *ngIf="getFieldError('usernameOrEmail')" class="error-message">
+          {{ getFieldError('usernameOrEmail') }}
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password" class="form-label">
+          <span class="label-text">Şifre</span>
+          <span class="required">*</span>
+        </label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            class="form-input"
+            [class.invalid]="isFieldInvalid('password')"
+            [class.valid]="isFieldValid('password')"
+            placeholder="••••••••"
+            autocomplete="current-password">
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            title="Şifreyi göster/gizle">
+            {{ showPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        <div *ngIf="getFieldError('password')" class="error-message">
+          {{ getFieldError('password') }}
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="login-button"
+        [disabled]="loading || loginForm.invalid">
+        <span *ngIf="!loading">🚀 Giriş Yap</span>
+        <span *ngIf="loading" class="loading-content">
+          <span class="spinner">⏳</span>
+          Giriş yapılıyor...
+        </span>
+      </button>
+
+    </form>
+
+
+
+
+  </div>
+
+  <!-- Background -->
+  <div class="background-pattern"></div>
+</div>

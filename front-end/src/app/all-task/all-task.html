@@ -1,0 +1,404 @@
+<div class="all-tasks-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>🏢 Direktör Paneli</h1>
+    <div class="header-actions">
+      <button class="btn btn-refresh" (click)="loadDirectorTasks()" [disabled]="loading">
+        <span *ngIf="!loading">🔄 Yenile</span>
+        <span *ngIf="loading">⏳ Yükleniyor...</span>
+      </button>
+      
+      <button 
+        *ngIf="activeTab === 'my-assigned'"
+        class="btn btn-bulk-delete" 
+        (click)="toggleBulkDeleteMode()"
+        [class.active]="bulkDeleteMode">
+        <span *ngIf="!bulkDeleteMode">📋 Toplu Sil</span>
+        <span *ngIf="bulkDeleteMode">❌ İptal</span>
+      </button>
+      
+      <div class="task-count">
+        <span *ngIf="activeTab === 'my-assigned' && !bulkDeleteMode">
+          Müdürlere Verdiğim: {{ myAssignedTasks.length }} görev
+        </span>
+        <span *ngIf="activeTab === 'completed-reports' && !bulkDeleteMode">
+          Raporlanan: {{ completedReports.length }} görev
+        </span>
+        <span *ngIf="bulkDeleteMode">Seçilen: {{ selectedTasks.size }} görev</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation" *ngIf="!loading">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'my-assigned'"
+      (click)="switchTab('my-assigned')">
+      📋 Müdürlere Verdiğim Görevler ({{ myAssignedTasks.length }})
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'completed-reports'"
+      (click)="switchTab('completed-reports')">
+      📊 Raporlanan Görevler ({{ completedReports.length }})
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Görevler yükleniyor...</p>
+  </div>
+
+  <!-- Success Message -->
+  <div *ngIf="success" class="alert alert-success">
+    <div class="alert-content">
+      <span class="alert-icon">✅</span>
+      <div class="alert-text">
+        {{ success }}
+      </div>
+      <button class="alert-close" (click)="success = null">×</button>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <div class="error-message">
+      <span class="error-icon">⚠️</span>
+      {{ error }}
+    </div>
+    <div class="error-actions">
+      <button class="btn btn-retry" (click)="loadDirectorTasks()">Tekrar Dene</button>
+      <button class="btn btn-dismiss" (click)="error = null">Kapat</button>
+    </div>
+  </div>
+
+  <!-- My Assigned Tasks Tab Content -->
+  <div *ngIf="!loading && !error && activeTab === 'my-assigned'" class="tab-content">
+    <div *ngIf="myAssignedTasks.length === 0" class="no-tasks">
+      <div class="no-tasks-message">
+        <span class="no-tasks-icon">📋</span>
+        <h3>Henüz müdürlere görev vermemişsiniz</h3>
+        <p>Oluşturduğunuz görevler burada görünecek.</p>
+      </div>
+    </div>
+
+    <!-- Bulk Delete Actions for My Tasks -->
+    <div *ngIf="bulkDeleteMode && myAssignedTasks.length > 0" class="bulk-actions">
+      <div class="bulk-info">
+        <button class="btn btn-select-all" (click)="toggleAllTasks()">
+          <span *ngIf="selectedTasks.size < myAssignedTasks.length">☑️ Tümünü Seç</span>
+          <span *ngIf="selectedTasks.size === myAssignedTasks.length">⬜ Seçimi Kaldır</span>
+        </button>
+      </div>
+      <div class="bulk-delete-actions">
+        <button 
+          class="btn btn-delete-selected" 
+          (click)="deleteSelectedTasks()"
+          [disabled]="selectedTasks.size === 0">
+          🗑️ Seçilenleri Sil ({{ selectedTasks.size }})
+        </button>
+      </div>
+    </div>
+
+    <!-- My Assigned Tasks Table -->
+    <table *ngIf="myAssignedTasks.length > 0" class="tasks-table">
+      <thead>
+        <tr>
+          <th *ngIf="bulkDeleteMode" class="checkbox-column">
+            <input 
+              type="checkbox" 
+              [checked]="selectedTasks.size === myAssignedTasks.length && myAssignedTasks.length > 0"
+              [indeterminate]="selectedTasks.size > 0 && selectedTasks.size < myAssignedTasks.length"
+              (change)="toggleAllTasks()"
+              class="bulk-checkbox">
+          </th>
+          <th class="sortable-header" 
+              (click)="sortBy('gorevid')" 
+              [class.active]="isSortActive('gorevid')">
+            ID {{ getSortIcon('gorevid') }}
+          </th>
+          <th class="sortable-header" 
+              (click)="sortBy('isim')" 
+              [class.active]="isSortActive('isim')">
+            Görev Adı {{ getSortIcon('isim') }}
+          </th>
+          <th class="sortable-header" 
+              (click)="sortBy('description')" 
+              [class.active]="isSortActive('description')">
+            Açıklama {{ getSortIcon('description') }}
+          </th>
+          <th class="sortable-header" 
+              (click)="sortBy('userid')" 
+              [class.active]="isSortActive('userid')">
+            Atanan Müdür {{ getSortIcon('userid') }}
+          </th>
+          <th class="sortable-header" 
+              (click)="sortBy('priority')" 
+              [class.active]="isSortActive('priority')">
+            Öncelik {{ getSortIcon('priority') }}
+          </th>
+          <th class="sortable-header" 
+              (click)="sortBy('status')" 
+              [class.active]="isSortActive('status')">
+            Durum {{ getSortIcon('status') }}
+          </th>
+          <th>İşlemler</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let gorev of myAssignedTasks; trackBy: trackByGorevId" 
+            class="task-row"
+            [class.selected]="isTaskSelected(gorev.gorevid)"
+            [class.deleting]="isDeleting(gorev.gorevid)">
+          
+          <td *ngIf="bulkDeleteMode" class="checkbox-column">
+            <input 
+              type="checkbox" 
+              [checked]="isTaskSelected(gorev.gorevid)"
+              (change)="toggleTaskSelection(gorev.gorevid)"
+              class="task-checkbox">
+          </td>
+          
+          <td class="task-id">{{ gorev.gorevid }}</td>
+          <td class="task-name">
+            <div class="task-name-content">
+              {{ gorev.isim }}
+            </div>
+          </td>
+          <td class="task-description">
+            <div class="description-content" [title]="gorev.description">
+              {{ gorev.description }}
+            </div>
+          </td>
+          <td class="task-user">
+            <div class="user-badge">
+              <span class="user-icon">👤</span>
+              {{ gorev.userid }}
+            </div>
+          </td>
+          <td class="task-priority">
+            <span class="priority-badge" [ngClass]="getPriorityClass(gorev.priority)">
+              {{ gorev.priority }}
+            </span>
+          </td>
+          <td class="task-status">
+            <span class="status-badge" [ngClass]="getStatusClass(gorev.status)">
+              {{ getStatusText(gorev.status) }}
+            </span>
+          </td>
+          <td class="task-actions">
+            <div class="action-buttons">
+              <button 
+                class="btn btn-edit" 
+                title="Düzenle"
+                (click)="editGorev(gorev)"
+                [disabled]="isDeleting(gorev.gorevid) || bulkDeleteMode">
+                ✏️
+              </button>
+              <button 
+                class="btn btn-delete" 
+                title="Sil"
+                (click)="openDeleteConfirm(gorev)"
+                [disabled]="isDeleting(gorev.gorevid) || bulkDeleteMode"
+                [class.loading]="isDeleting(gorev.gorevid)">
+                <span *ngIf="!isDeleting(gorev.gorevid)">🗑️</span>
+                <span *ngIf="isDeleting(gorev.gorevid)" class="delete-spinner">⏳</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Completed Reports Tab Content -->
+  <div *ngIf="!loading && !error && activeTab === 'completed-reports'" class="tab-content">
+    <div *ngIf="completedReports.length === 0" class="no-tasks">
+      <div class="no-tasks-message">
+        <span class="no-tasks-icon">✅</span>
+        <h3>Henüz raporlanan görev yok</h3>
+        <p>Müdürlerin rapor ettiği görevler burada görünecek.</p>
+      </div>
+    </div>
+
+    <!-- Completed Reports Table -->
+    <table *ngIf="completedReports.length > 0" class="tasks-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Görev Adı</th>
+          <th>Görev Açıklaması</th>
+          <th>Rapor Açıklaması</th>
+          <th>Rapor Eden Müdür</th>
+          <th>Öncelik</th>
+          <th>Durum</th>
+          <th>İşlemler</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let gorev of completedReports; trackBy: trackByGorevId" class="task-row">
+          <td class="task-id">{{ gorev.gorevid }}</td>
+          <td class="task-name">
+            <div class="task-name-content">
+              {{ gorev.isim }}
+            </div>
+          </td>
+          <td class="task-description">
+            <div class="description-content" [title]="gorev.description">
+              {{ gorev.description }}
+            </div>
+          </td>
+          <td class="report-description">
+            <div class="report-content" [title]="gorev.reportDescription || 'Açıklama yok'">
+              <span *ngIf="gorev.reportDescription; else noReportDescription">
+                {{ gorev.reportDescription }}
+              </span>
+              <ng-template #noReportDescription>
+                <span class="no-description">Açıklama yok</span>
+              </ng-template>
+            </div>
+          </td>
+          <td class="task-user">
+            <div class="user-badge">
+              <span class="user-icon">👤</span>
+              {{ gorev.userid }}
+            </div>
+          </td>
+          <td class="task-priority">
+            <span class="priority-badge" [ngClass]="getPriorityClass(gorev.priority)">
+              {{ gorev.priority }}
+            </span>
+          </td>
+          <td class="task-status">
+            <span class="status-badge completed">✅ Tamamlandı</span>
+          </td>
+          <td class="task-actions">
+            <div class="action-buttons">
+              <button 
+                class="btn btn-delete" 
+                title="Raporlanan Görevi Sil"
+                (click)="openDeleteReportedTaskConfirm(gorev)"
+                [disabled]="isDeleting(gorev.gorevid)">
+                <span *ngIf="!isDeleting(gorev.gorevid)">🗑️</span>
+                <span *ngIf="isDeleting(gorev.gorevid)" class="delete-spinner">⏳</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Statistics Footer -->
+  <div *ngIf="!loading && !error" class="statistics">
+    <div *ngIf="activeTab === 'my-assigned' && myAssignedTasks.length > 0">
+      <div class="stat-item">
+        <span class="stat-label">Müdürlere Verdiğim Görevler:</span>
+        <span class="stat-value">{{ myAssignedTasks.length }}</span>
+      </div>
+      <div class="stat-item" *ngIf="bulkDeleteMode">
+        <span class="stat-label">Seçilen:</span>
+        <span class="stat-value">{{ selectedTasks.size }}</span>
+      </div>
+    </div>
+    <div *ngIf="activeTab === 'completed-reports' && completedReports.length > 0">
+      <div class="stat-item">
+        <span class="stat-label">Tamamlanan Görev Raporları:</span>
+        <span class="stat-value">{{ completedReports.length }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div *ngIf="showDeleteConfirm" class="modal-overlay" (click)="closeDeleteConfirm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Görev Silme Onayı</h3>
+        <button class="modal-close" (click)="closeDeleteConfirm()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="delete-warning">
+          <span class="warning-icon">⚠️</span>
+          <div class="warning-text">
+            <p><strong>"{{ taskToDelete?.isim }}"</strong> görevini silmek istediğinizden emin misiniz?</p>
+            <p class="warning-note">Bu işlem geri alınamaz.</p>
+          </div>
+        </div>
+        
+        <div class="task-details">
+          <div class="detail-item">
+            <strong>Görev ID:</strong> {{ taskToDelete?.gorevid }}
+          </div>
+          <div class="detail-item">
+            <strong>Kullanıcı ID:</strong> {{ taskToDelete?.userid }}
+          </div>
+          <div class="detail-item">
+            <strong>Öncelik:</strong> 
+            <span class="priority-badge" [ngClass]="getPriorityClass(taskToDelete?.priority || '')">
+              {{ taskToDelete?.priority }}
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-cancel" (click)="closeDeleteConfirm()">
+          ❌ İptal
+        </button>
+        <button class="btn btn-confirm-delete" (click)="confirmDelete()">
+          🗑️ Sil
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Reported Task Confirmation Modal -->
+  <div *ngIf="showDeleteReportedTaskConfirm" class="modal-overlay" (click)="closeDeleteReportedTaskConfirm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Raporlanan Görev Silme Onayı</h3>
+        <button class="modal-close" (click)="closeDeleteReportedTaskConfirm()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="delete-warning">
+          <span class="warning-icon">⚠️</span>
+          <div class="warning-text">
+            <p><strong>"{{ reportedTaskToDelete?.isim }}"</strong> raporlanan görevini silmek istediğinizden emin misiniz?</p>
+            <p class="warning-note">Bu işlem geri alınamaz ve müdürün raporu da silinecektir.</p>
+          </div>
+        </div>
+        
+        <div class="task-details">
+          <div class="detail-item">
+            <strong>Görev ID:</strong> {{ reportedTaskToDelete?.gorevid }}
+          </div>
+          <div class="detail-item">
+            <strong>Rapor Eden Müdür:</strong> {{ reportedTaskToDelete?.userid }}
+          </div>
+          <div class="detail-item">
+            <strong>Öncelik:</strong> 
+            <span class="priority-badge" [ngClass]="getPriorityClass(reportedTaskToDelete?.priority || '')">
+              {{ reportedTaskToDelete?.priority }}
+            </span>
+          </div>
+          <div class="detail-item" *ngIf="reportedTaskToDelete?.reportDescription">
+            <strong>Rapor Açıklaması:</strong> {{ reportedTaskToDelete?.reportDescription }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-cancel" (click)="closeDeleteReportedTaskConfirm()">
+          ❌ İptal
+        </button>
+        <button class="btn btn-confirm-delete" (click)="confirmDeleteReportedTask()">
+          🗑️ Raporlanan Görevi Sil
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

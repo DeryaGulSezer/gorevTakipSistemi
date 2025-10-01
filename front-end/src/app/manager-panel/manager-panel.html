@@ -1,0 +1,677 @@
+<!-- Manager Panel Header -->
+<div class="manager-header">
+  <div class="header-content">
+    <h1>🔶 Müdür Paneli</h1>
+    <div class="manager-info" *ngIf="currentUser">
+      <span>Hoş geldin, {{ currentUser.fullName }}</span>
+      <span class="role-badge">{{ currentUser.role }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="loading">
+  <div class="spinner"></div>
+  <p>Veriler yükleniyor...</p>
+</div>
+
+<!-- Error Message -->
+<div *ngIf="error" class="alert alert-error">
+  ❌ {{ error }}
+</div>
+
+<!-- Success Message -->
+<div *ngIf="success" class="alert alert-success">
+  {{ success }}
+</div>
+
+
+
+<!-- Main Content -->
+<div *ngIf="!loading && !error" class="manager-content">
+  
+  <!-- Performance Summary -->
+  <div class="performance-section" *ngIf="teamPerformance">
+    <h2>📊 Ekip Performansı</h2>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ teamPerformance.totalTeamMembers }}</div>
+        <div class="stat-label">Ekip Üyesi</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ teamPerformance.totalTasks }}</div>
+        <div class="stat-label">Toplam Görev</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ teamPerformance.completedTasks }}</div>
+        <div class="stat-label">Tamamlanan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ teamPerformance.completionRate | number:'1.0-1' }}%</div>
+        <div class="stat-label">Tamamlama Oranı</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Assignment Section -->
+  <div class="task-assignment-section">
+    <div class="section-header">
+      <h2>➕ Görev Atama</h2>
+      <button 
+        class="btn btn-primary" 
+        (click)="toggleAssignForm()"
+        [disabled]="teamMembers.length === 0">
+        {{ showAssignForm ? 'İptal Et' : 'Yeni Görev Ata' }}
+      </button>
+    </div>
+
+    <!-- Task Assignment Form -->
+    <div *ngIf="showAssignForm" class="assign-form-container">
+      <form [formGroup]="assignForm" (ngSubmit)="onAssignTask()">
+        <div class="form-grid">
+          
+          <!-- Team Member Selection -->
+          <div class="form-group">
+            <label for="teamMemberId">Ekip Üyesi *</label>
+            <select 
+              id="teamMemberId" 
+              formControlName="teamMemberId"
+              class="form-control"
+              [class.error]="getFieldError('teamMemberId')">
+              <option value="">Ekip üyesi seç...</option>
+              <option 
+                *ngFor="let member of teamMembers; trackBy: trackByMemberId" 
+                [value]="member.id">
+                {{ member.fullName }} ({{ member.username }})
+              </option>
+            </select>
+            <div class="error-message" *ngIf="getFieldError('teamMemberId')">
+              {{ getFieldError('teamMemberId') }}
+            </div>
+          </div>
+
+          <!-- Task Name -->
+          <div class="form-group">
+            <label for="taskName">Görev Adı *</label>
+            <input 
+              type="text" 
+              id="taskName" 
+              formControlName="taskName"
+              class="form-control"
+              placeholder="Görev adını girin..."
+              [class.error]="getFieldError('taskName')">
+            <div class="error-message" *ngIf="getFieldError('taskName')">
+              {{ getFieldError('taskName') }}
+            </div>
+          </div>
+
+          <!-- Priority -->
+          <div class="form-group">
+            <label for="priority">Öncelik *</label>
+            <select 
+              id="priority" 
+              formControlName="priority"
+              class="form-control">
+              <option value="düşük">🟢 Düşük</option>
+              <option value="orta">🟡 Orta</option>
+              <option value="yüksek">🔴 Yüksek</option>
+            </select>
+          </div>
+
+          <!-- Parent Task (optional) -->
+          <div class="form-group">
+            <label for="parentTaskId">
+              Üst Görev (opsiyonel) 
+              <span class="task-count" *ngIf="getAvailableParentTasksCount() > 0">
+                ({{ getAvailableParentTasksCount() }} görev mevcut)
+              </span>
+            </label>
+            <select 
+              id="parentTaskId"
+              formControlName="parentTaskId"
+              class="form-control"
+              [disabled]="getAvailableParentTasksCount() === 0">
+              <option value="">Üst görev seç...</option>
+              <option *ngFor="let t of getAvailableParentTasks()" [value]="t.gorevid">
+                {{ t.isim }} - {{ getStatusText(t.status) }} ({{ t.priority }})
+              </option>
+            </select>
+            <small class="help-text" *ngIf="getAvailableParentTasksCount() > 0">
+              Eğer bu görev, size direktörün verdiği bir görevin alt parçasıysa üst görev seçin. (Tamamlanan görevler gösterilmez)
+            </small>
+            <small class="help-text text-muted" *ngIf="getAvailableParentTasksCount() === 0">
+              Şu anda parent task olarak kullanılabilecek görev bulunmuyor.
+            </small>
+          </div>
+
+          <!-- Task Description -->
+          <div class="form-group full-width">
+            <label for="taskDescription">Görev Açıklaması *</label>
+            <textarea 
+              id="taskDescription" 
+              formControlName="taskDescription"
+              class="form-control textarea"
+              rows="4"
+              placeholder="Görev detaylarını açıklayın..."
+              [class.error]="getFieldError('taskDescription')"></textarea>
+            <div class="error-message" *ngIf="getFieldError('taskDescription')">
+              {{ getFieldError('taskDescription') }}
+            </div>
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+          <button 
+            type="submit" 
+            class="btn btn-success"
+            [disabled]="assignForm.invalid || loading">
+            {{ loading ? 'Atanıyor...' : '✅ Görev Ata' }}
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-secondary"
+            (click)="toggleAssignForm()">
+            ❌ İptal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Team Members Section -->
+  <div class="team-section" *ngIf="teamMembers.length > 0">
+    <h2>👥 Ekibim ({{ teamMembers.length }})</h2>
+    <div class="team-grid">
+      <div 
+        *ngFor="let member of teamMembers; trackBy: trackByMemberId" 
+        class="team-member-card">
+        <div class="member-avatar">
+          {{ member.fullName.charAt(0).toUpperCase() }}
+        </div>
+        <div class="member-info">
+          <div class="member-name">{{ member.fullName }}</div>
+          <div class="member-username">@{{ member.username }}</div>
+          <div class="member-email">{{ member.email }}</div>
+        </div>
+        <div class="member-stats">
+          <div class="stat">
+            <span class="stat-number">
+              {{ getTaskCountForUser(member.id) }}
+            </span>
+            <span class="stat-label">Görev</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Team Members -->
+  <div *ngIf="teamMembers.length === 0" class="empty-state">
+    <div class="empty-icon">👥</div>
+    <h3>Henüz ekip üyeniz yok</h3>
+    <p>Direktör size ekip üyeleri atadığında burada görünecek</p>
+  </div>
+
+  <!-- Task Management Tabs -->
+  <div class="tabs-section">
+    <div class="tab-navigation">
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'active'"
+        (click)="switchTab('active')">
+        📋 Aktif Görevler ({{ teamTasks.length }})
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'completed'"
+        (click)="switchTab('completed')">
+        ✅ Tamamlanan Görevler ({{ completedTasks.length }})
+      </button>
+      
+    </div>
+
+    <!-- Active Tasks Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'active'">
+      <!-- Team Tasks Section -->
+      <div class="tasks-section" *ngIf="teamTasks.length > 0">
+        <h2>📋 Ekip Görevleri ({{ teamTasks.length }})</h2>
+    <div class="table-container">
+      <table class="tasks-table">
+        <thead>
+          <tr>
+            <th 
+              class="sortable-header" 
+              (click)="teamTasks = sortTasks('isim', teamTasks)"
+              [class.active]="isSortActive('isim')">
+              Görev Adı {{ getSortIcon('isim') }}
+            </th>
+            <th>Ekip Üyesi</th>
+            <th 
+              class="sortable-header"
+              (click)="teamTasks = sortTasks('priority', teamTasks)"
+              [class.active]="isSortActive('priority')">
+              Öncelik {{ getSortIcon('priority') }}
+            </th>
+            <th 
+              class="sortable-header"
+              (click)="teamTasks = sortTasks('status', teamTasks)"
+              [class.active]="isSortActive('status')">
+              Durum {{ getSortIcon('status') }}
+            </th>
+            <th>Açıklama</th>
+            <th width="120">İşlemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let task of teamTasks; trackBy: trackByTaskId">
+            <td class="task-name">{{ task.isim }}</td>
+            <td class="task-assignee">
+              <span class="user-badge">
+                {{ getTeamMemberName(task.userid) }}
+              </span>
+            </td>
+            <td>
+              <span class="priority-badge" [class]="getPriorityClass(task.priority)">
+                {{ task.priority }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(task.status)">
+                {{ getStatusText(task.status) }}
+              </span>
+            </td>
+            <td class="task-description">{{ task.description }}</td>
+            <td class="task-actions">
+              <!-- Görevi Başlat butonu (sadece bekleyen görevler için) -->
+              <button 
+                *ngIf="(task.status || '').toUpperCase() === 'PENDING'"
+                class="btn btn-sm btn-info" 
+                (click)="startTask(task)"
+                title="Görevi Başlat">
+                🚀
+              </button>
+
+              <!-- Görevi Tamamla butonu (sadece devam eden görevler için) -->
+              <button 
+                *ngIf="(task.status || '').toUpperCase() === 'IN_PROGRESS'"
+                class="btn btn-sm btn-success" 
+                (click)="completeTask(task)"
+                title="Görevi Tamamla">
+                ✅
+              </button>
+
+              <button 
+                class="btn btn-sm btn-edit" 
+                (click)="editTask(task)"
+                title="Düzenle">
+                ✏️
+              </button>
+              
+              <button 
+                class="btn btn-sm btn-danger" 
+                (click)="deleteTask(task)"
+                title="Sil">
+                🗑️
+              </button>
+
+              <!-- Tamamlandıysa raporla -->
+              <button 
+                *ngIf="(task.status || '').toUpperCase() === 'COMPLETED'"
+                class="btn btn-sm btn-primary" 
+                (click)="openReportModal(task)"
+                [disabled]="task.reportedToDirector"
+                [title]="task.reportedToDirector ? 'Zaten raporlandı' : 'Direktöre Raporla'">
+                {{ task.reportedToDirector ? '✔️ Raporlandı' : '📊 Raporla' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- My Tasks Section -->
+  <div class="my-tasks-section" *ngIf="managerTasks.length > 0">
+    <h2>📝 Benim Görevlerim ({{ managerTasks.length }})</h2>
+    <div class="table-container">
+      <table class="tasks-table">
+        <thead>
+          <tr>
+            <th 
+              class="sortable-header" 
+              (click)="managerTasks = sortTasks('isim', managerTasks)"
+              [class.active]="isSortActive('isim')">
+              Görev Adı {{ getSortIcon('isim') }}
+            </th>
+            <th 
+              class="sortable-header"
+              (click)="managerTasks = sortTasks('priority', managerTasks)"
+              [class.active]="isSortActive('priority')">
+              Öncelik {{ getSortIcon('priority') }}
+            </th>
+            <th 
+              class="sortable-header"
+              (click)="managerTasks = sortTasks('status', managerTasks)"
+              [class.active]="isSortActive('status')">
+              Durum {{ getSortIcon('status') }}
+            </th>
+            <th>Açıklama</th>
+            <th width="120">İşlemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let task of managerTasks; trackBy: trackByTaskId">
+            <td class="task-name">{{ task.isim }}</td>
+            <td>
+              <span class="priority-badge" [class]="getPriorityClass(task.priority)">
+                {{ task.priority }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(task.status)">
+                {{ getStatusText(task.status) }}
+              </span>
+            </td>
+            <td class="task-description">{{ task.description }}</td>
+            <td class="task-actions">
+              <!-- Görevi Başlat butonu (sadece bekleyen görevler için) -->
+              <button 
+                *ngIf="(task.status || '').toUpperCase() === 'PENDING'"
+                class="btn btn-sm btn-info" 
+                (click)="startTask(task)"
+                title="Görevi Başlat">
+                🚀
+              </button>
+
+              <!-- Görevi Tamamla butonu (sadece devam eden görevler için) -->
+              <button 
+                *ngIf="(task.status || '').toUpperCase() === 'IN_PROGRESS'"
+                class="btn btn-sm btn-success" 
+                (click)="completeTask(task)"
+                title="Görevi Tamamla">
+                ✅
+              </button>
+
+              <button 
+                class="btn btn-sm btn-edit" 
+                (click)="editTask(task)"
+                title="Düzenle">
+                ✏️
+              </button>
+              
+              <button 
+                class="btn btn-sm btn-danger" 
+                (click)="deleteTask(task)"
+                title="Sil">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  </div>
+  <!-- End of Active Tasks Tab -->
+
+  <!-- Completed Tasks Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'completed'">
+    <div class="completed-section">
+      <div class="completed-header">
+        <h2>✅ Tamamlanan Görevler ({{ completedTasks.length }})</h2>
+        
+        <!-- Report Section -->
+        <div class="report-section" *ngIf="completedTasks.length > 0">
+          <div class="selection-controls">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [checked]="selectedCompletedTasks.length === completedTasks.length && completedTasks.length > 0"
+                [indeterminate]="selectedCompletedTasks.length > 0 && selectedCompletedTasks.length < completedTasks.length"
+                (change)="toggleAllCompletedTasks()">
+              Tümünü Seç ({{ completedTasks.length }})
+            </label>
+          </div>
+          
+          <div class="report-actions" *ngIf="selectedCompletedTasks.length > 0">
+            <span class="selected-count">{{ selectedCompletedTasks.length }} görev seçildi</span>
+            <button 
+              class="btn btn-success"
+              (click)="reportSelectedCompletedTasksToDirector()"
+              [disabled]="loading">
+              {{ loading ? 'Gönderiliyor...' : '📊 Direktöre Rapor Et' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Completed Tasks List -->
+      <div class="completed-tasks-list" *ngIf="completedTasks.length > 0">
+        <div class="table-container">
+          <table class="tasks-table">
+            <thead>
+              <tr>
+                <th>Görev Adı</th>
+                <th>Ekip Üyesi</th>
+                <th>Öncelik</th>
+                <th>Açıklama</th>
+                <th>Durum</th>
+                <th width="160">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let task of completedTasks; trackBy: trackByTaskId">
+                <td class="task-name">{{ task.isim }}</td>
+                <td class="task-assignee">
+                  <span class="user-badge">
+                    {{ getTeamMemberName(task.userid) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="priority-badge" [class]="getPriorityClass(task.priority)">
+                    {{ task.priority }}
+                  </span>
+                </td>
+                <td class="task-description">{{ task.description }}</td>
+                <td>
+                  <span class="status-badge completed">✅ Tamamlandı</span>
+                </td>
+                <td class="task-actions">
+                  <button class="btn btn-sm btn-edit" (click)="editTask(task)" title="Düzenle">✏️</button>
+                  <button class="btn btn-sm btn-danger" (click)="deleteTask(task)" title="Sil">🗑️</button>
+                  <button 
+                    class="btn btn-sm btn-primary" 
+                    (click)="openReportModal(task)" 
+                    [disabled]="task.reportedToDirector"
+                    [title]="task.reportedToDirector ? 'Zaten raporlandı' : 'Direktöre Raporla'">
+                    {{ task.reportedToDirector ? '✔️ Raporlandı' : '📊 Raporla' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- No Completed Tasks -->
+      <div *ngIf="!completedTasks.length" class="empty-state">
+        <div class="empty-icon">✅</div>
+        <h3>Henüz tamamlanmış görev yok</h3>
+        <p>Ekip üyelerinin tamamladığı görevler burada görünecek</p>
+      </div>
+
+    </div>
+  </div>
+  <!-- End of Completed Tasks Tab -->
+
+  
+
+</div>
+<!-- End of tabs section -->
+
+</div>
+
+<!-- Report Task Modal -->
+<div *ngIf="showReportModal" class="modal-overlay" (click)="closeReportModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📊 Görev Raporla</h3>
+      <button class="close-btn" (click)="closeReportModal()">×</button>
+    </div>
+    
+    <form [formGroup]="reportForm" (ngSubmit)="onSubmitReport()">
+      <div class="modal-body">
+        
+        <div class="task-info" *ngIf="reportingTask">
+          <h4>Raporlanacak Görev:</h4>
+          <div class="task-details">
+            <p><strong>Görev Adı:</strong> {{ reportingTask.isim }}</p>
+            <p><strong>Öncelik:</strong> 
+              <span class="priority-badge" [class]="getPriorityClass(reportingTask.priority)">
+                {{ reportingTask.priority }}
+              </span>
+            </p>
+            <p><strong>Durum:</strong> 
+              <span class="status-badge" [class]="getStatusClass(reportingTask.status)">
+                {{ getStatusText(reportingTask.status) }}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reportDescription">Rapor Açıklaması *</label>
+          <textarea 
+            id="reportDescription" 
+            formControlName="reportDescription"
+            class="form-control textarea"
+            rows="6"
+            placeholder="Görevle ilgili detaylı açıklama yazın... (örn: Tamamlanan işler, karşılaşılan zorluklar, sonuçlar, öneriler vb.)"
+            [class.error]="reportForm.get('reportDescription')?.invalid && reportForm.get('reportDescription')?.touched"></textarea>
+          <div class="error-message" *ngIf="reportForm.get('reportDescription')?.invalid && reportForm.get('reportDescription')?.touched">
+            Rapor açıklaması zorunludur ve en az 10 karakter olmalıdır.
+          </div>
+          <div class="help-text text-muted">
+            <small>⚠️ Not: Açıklama alanı şu an sadece görsel amaçlıdır. Backend güncellendiğinde veritabanına kaydedilecektir.</small>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="reportForm.invalid || loading">
+          {{ loading ? '📤 Gönderiliyor...' : '📊 Raporu Gönder' }}
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="closeReportModal()">
+          ❌ İptal
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Task Modal -->
+<div *ngIf="showEditModal" class="modal-overlay" (click)="closeEditModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📝 Görevi Düzenle</h3>
+      <button class="close-btn" (click)="closeEditModal()">×</button>
+    </div>
+    
+    <form [formGroup]="editForm" (ngSubmit)="onSubmitEdit()" *ngIf="editForm">
+      <div class="modal-body">
+        
+        <div class="form-row">
+          <!-- Task Name -->
+          <div class="form-group">
+            <label for="editTaskName">Görev Adı *</label>
+            <input 
+              id="editTaskName" 
+              type="text" 
+              formControlName="taskName"
+              class="form-control"
+              placeholder="Görev adını girin..."
+              [class.error]="getEditFieldError('taskName')">
+            <div class="error-message" *ngIf="getEditFieldError('taskName')">
+              {{ getEditFieldError('taskName') }}
+            </div>
+          </div>
+
+          <!-- Team Member -->
+          <div class="form-group">
+            <label for="editTeamMemberId">Ekip Üyesi *</label>
+            <select 
+              id="editTeamMemberId" 
+              formControlName="teamMemberId"
+              class="form-control"
+              [class.error]="getEditFieldError('teamMemberId')">
+              <option value="">Ekip Üyesi Seçin</option>
+              <option 
+                *ngFor="let member of teamMembers; trackBy: trackByMemberId"
+                [value]="member.id">
+                {{ member.fullName }} (@{{ member.username }})
+              </option>
+            </select>
+            <div class="error-message" *ngIf="getEditFieldError('teamMemberId')">
+              {{ getEditFieldError('teamMemberId') }}
+            </div>
+          </div>
+
+          <!-- Priority -->
+          <div class="form-group">
+            <label for="editPriority">Öncelik *</label>
+            <select 
+              id="editPriority" 
+              formControlName="priority"
+              class="form-control">
+              <option value="düşük">🟢 Düşük</option>
+              <option value="orta">🟡 Orta</option>
+              <option value="yüksek">🔴 Yüksek</option>
+            </select>
+          </div>
+
+          <!-- Task Description -->
+          <div class="form-group full-width">
+            <label for="editTaskDescription">Görev Açıklaması *</label>
+            <textarea 
+              id="editTaskDescription" 
+              formControlName="taskDescription"
+              class="form-control textarea"
+              rows="4"
+              placeholder="Görev detaylarını açıklayın..."
+              [class.error]="getEditFieldError('taskDescription')"></textarea>
+            <div class="error-message" *ngIf="getEditFieldError('taskDescription')">
+              {{ getEditFieldError('taskDescription') }}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button 
+          type="submit" 
+          class="btn btn-success"
+          [disabled]="editForm.invalid || loading">
+          {{ loading ? 'Güncelleniyor...' : '✅ Güncelle' }}
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="closeEditModal()">
+          ❌ İptal
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

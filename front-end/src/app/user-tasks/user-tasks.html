@@ -1,0 +1,186 @@
+<div class="user-tasks-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1>Görevlerim</h1>
+      <div class="user-info" *ngIf="currentUser">
+        <span class="user-icon">👤</span>
+        <div class="user-details">
+          <span class="user-name">{{ currentUser.fullName || currentUser.username }}</span>
+          <span class="user-id">(ID: {{ currentUser.id }})</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-refresh" (click)="refresh()" [disabled]="loading">
+        <span *ngIf="!loading">🔄 Yenile</span>
+        <span *ngIf="loading">⏳ Yükleniyor...</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-container">
+    <div class="stat-card total">
+      <div class="stat-icon">📊</div>
+      <div class="stat-content">
+        <div class="stat-number">{{ stats.totalTasks }}</div>
+        <div class="stat-label">Toplam Görev</div>
+      </div>
+    </div>
+    <div class="stat-card active">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-content">
+        <div class="stat-number">{{ stats.activeTasks }}</div>
+        <div class="stat-label">Aktif Görev</div>
+      </div>
+    </div>
+    <div class="stat-card completed">
+      <div class="stat-icon">✅</div>
+      <div class="stat-content">
+        <div class="stat-number">{{ stats.completedTasks }}</div>
+        <div class="stat-label">Tamamlanan</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button 
+      class="tab-button"
+      [class.active]="filterStatus === 'active'"
+      (click)="changeFilter('active')">
+      ⚡ Aktif Görevler ({{ stats.activeTasks }})
+    </button>
+    <button 
+      class="tab-button"
+      [class.active]="filterStatus === 'all'"
+      (click)="changeFilter('all')">
+      📋 Tüm Görevler ({{ stats.totalTasks }})
+    </button>
+    <button 
+      class="tab-button"
+      [class.active]="filterStatus === 'completed'"
+      (click)="changeFilter('completed')">
+      ✅ Tamamlanan ({{ stats.completedTasks }})
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Görevler yükleniyor...</p>
+  </div>
+
+  <!-- Success Message -->
+  <div *ngIf="success" class="alert alert-success">
+    <div class="alert-content">
+      <span class="alert-icon">✅</span>
+      <div class="alert-text">{{ success }}</div>
+      <button class="alert-close" (click)="success = null">×</button>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="alert alert-error">
+    <div class="alert-content">
+      <span class="alert-icon">⚠️</span>
+      <div class="alert-text">{{ error }}</div>
+      <button class="alert-close" (click)="error = null">×</button>
+    </div>
+  </div>
+
+  <!-- Tasks List -->
+  <div *ngIf="!loading && !error" class="tasks-container">
+    <div *ngIf="gorevler.length === 0" class="no-tasks">
+      <div class="no-tasks-message">
+        <span class="no-tasks-icon">
+          {{ filterStatus === 'active' ? '⚡' : filterStatus === 'completed' ? '✅' : '📋' }}
+        </span>
+        <h3>
+          {{ filterStatus === 'active' ? 'Aktif görev bulunmuyor' : 
+             filterStatus === 'completed' ? 'Tamamlanmış görev bulunmuyor' : 
+             'Henüz görev bulunmuyor' }}
+        </h3>
+        <p>
+          {{ filterStatus === 'active' ? 'Şu anda üzerinde çalışmanız gereken bir görev yok.' :
+             filterStatus === 'completed' ? 'Henüz tamamladığınız bir görev bulunmuyor.' :
+             'Size atanmış hiçbir görev bulunamadı.' }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Tasks Grid -->
+    <div *ngIf="gorevler.length > 0" class="tasks-grid">
+      <div *ngFor="let gorev of gorevler; trackBy: trackByGorevId" 
+           class="task-card"
+           [class.completing]="isCompleting(gorev.gorevid)">
+        
+        <!-- Task Header -->
+        <div class="task-header">
+          <div class="task-title">{{ gorev.isim }}</div>
+          <div class="task-badges">
+            <span class="priority-badge" [ngClass]="getPriorityClass(gorev.priority)">
+              {{ gorev.priority }}
+            </span>
+            <span class="status-badge" [ngClass]="getStatusClass(gorev.status)">
+              {{ getStatusText(gorev.status) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Task Description -->
+        <div class="task-description">
+          {{ gorev.description }}
+        </div>
+
+        <!-- Task Meta -->
+        <div class="task-meta">
+          <div class="task-id">
+            <span class="meta-label">Görev ID:</span>
+            <span class="meta-value">#{{ gorev.gorevid }}</span>
+          </div>
+        </div>
+
+        <!-- Task Actions -->
+        <div class="task-actions">
+          <!-- Aktif görevler için durumu değiştirme butonları -->
+          <div *ngIf="gorev.status !== 'COMPLETED'" class="status-actions">
+            <button 
+              *ngIf="gorev.status === 'PENDING'"
+              class="btn btn-start"
+              (click)="updateTaskStatus(gorev, 'IN_PROGRESS')"
+              title="Göreve başla">
+              ▶️ Başla
+            </button>
+            
+            <button 
+              *ngIf="gorev.status === 'IN_PROGRESS'"
+              class="btn btn-pause"
+              (click)="updateTaskStatus(gorev, 'PENDING')"
+              title="Görevi duraklat">
+              ⏸️ Duraklat
+            </button>
+          </div>
+
+          <!-- Bitirdim butonu (sadece aktif görevler için) -->
+          <button 
+            *ngIf="gorev.status !== 'COMPLETED'"
+            class="btn btn-complete"
+            (click)="completeTask(gorev)"
+            [disabled]="isCompleting(gorev.gorevid)"
+            title="Görevi tamamla">
+            <span *ngIf="!isCompleting(gorev.gorevid)">🎉 Bitirdim</span>
+            <span *ngIf="isCompleting(gorev.gorevid)" class="completing-spinner">⏳ Tamamlanıyor...</span>
+          </button>
+
+          <!-- Tamamlanmış görevler için bilgi -->
+          <div *ngIf="gorev.status === 'COMPLETED'" class="completed-info">
+            <span class="completed-icon">🎉</span>
+            <span class="completed-text">Tamamlandı!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

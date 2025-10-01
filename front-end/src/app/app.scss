@@ -1,0 +1,324 @@
+// Global App Styles
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(135deg, var(--light-blue) 0%, var(--secondary-blue) 100%);
+}
+
+// Header Styles
+.app-header {
+  background: linear-gradient(135deg, var(--accent-rose) 0%, var(--dark-brown) 100%);
+  color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  .header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .logo {
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    p {
+      margin: 5px 0 0 0;
+      font-size: 14px;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+  }
+
+  .navigation {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 25px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      &.active {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      &.admin-link {
+        background: rgba(255, 140, 0, 0.2);
+        border-color: rgba(255, 140, 0, 0.4);
+        color: #ffd700;
+
+        &:hover {
+          background: rgba(255, 140, 0, 0.3);
+          border-color: rgba(255, 140, 0, 0.6);
+          color: #fff;
+        }
+
+        &.active {
+          background: rgba(255, 140, 0, 0.4);
+          border-color: rgba(255, 140, 0, 0.8);
+        }
+      }
+    }
+  }
+
+  // User Section Styles
+  .user-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .user-details {
+        .user-name {
+          font-weight: 600;
+          font-size: 14px;
+          color: white;
+          line-height: 1.2;
+        }
+
+        .user-role {
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.8);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+
+    .logout-button {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 8px 16px;
+      border-radius: 25px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+// Main Content Styles
+.app-main {
+  flex: 1;
+  min-height: calc(100vh - 140px); // Header + Footer yaklaşık yüksekliği
+  padding: 0;
+  background: transparent;
+
+  // Login sayfası için full height
+  &.no-header {
+    min-height: 100vh;
+  }
+}
+
+// Footer Styles
+.app-footer {
+  background: linear-gradient(135deg, var(--dark-brown) 0%, var(--dark-blue) 100%);
+  color: white;
+  margin-top: auto;
+
+  .footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+
+    p {
+      margin: 0;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .footer-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 14px;
+      opacity: 0.9;
+
+      span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .app-header {
+    .header-content {
+      flex-direction: column;
+      gap: 20px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .header-right {
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .logo {
+      h1 {
+        font-size: 24px;
+      }
+    }
+
+    .navigation {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+
+      .nav-link {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+    }
+
+    .user-section {
+      align-self: center;
+      
+      .user-info {
+        .user-details {
+          .user-name {
+            font-size: 12px;
+          }
+          
+          .user-role {
+            font-size: 10px;
+          }
+        }
+      }
+
+      .logout-button {
+        font-size: 11px;
+        padding: 6px 12px;
+      }
+    }
+  }
+
+  .app-footer {
+    .footer-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 10px;
+      padding: 15px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    .header-content {
+      padding: 10px;
+    }
+
+    .logo h1 {
+      font-size: 20px;
+    }
+
+    .navigation {
+      .nav-link {
+        padding: 8px 16px;
+        font-size: 13px;
+      }
+    }
+  }
+}
+
+// Global overrides for better integration
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+// Ensure smooth scrolling
+html {
+  scroll-behavior: smooth;
+}
+
+// Remove default margins and padding
+* {
+  box-sizing: border-box;
+}

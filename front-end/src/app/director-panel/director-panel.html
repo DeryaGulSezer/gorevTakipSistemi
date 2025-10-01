@@ -1,0 +1,42 @@
+<div class="director-header">
+  <h1>🟦 Direktör Paneli</h1>
+  <div class="info" *ngIf="currentUser">
+    <span>{{ currentUser.fullName }}</span>
+    <span class="role">{{ currentUser.role }}</span>
+  </div>
+  <div *ngIf="loading" class="loading">Yükleniyor...</div>
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+</div>
+
+<div class="tabs">
+  <button [class.active]="activeTab==='active'" (click)="switchTab('active')">Aktif Görevler</button>
+  <button [class.active]="activeTab==='completed'" (click)="switchTab('completed')">Tamamlanan Görevler</button>
+  <button [class.active]="activeTab==='reported'" (click)="switchTab('reported')">Raporlananlar</button>
+</div>
+
+<div *ngIf="activeTab==='active'">
+  <div *ngIf="activeTasks.length===0" class="empty">Görev yok</div>
+  <ul class="task-list">
+    <li *ngFor="let t of activeTasks; trackBy: trackByTaskId">
+      <div class="task">
+        <div class="title">{{ t.isim }}</div>
+        <div class="meta">Kime: {{ t.userid }} | Öncelik: {{ t.priority }} | Durum: {{ t.status }}</div>
+      </div>
+    </li>
+  </ul>
+  <div class="hint">Not: Bu liste yalnızca müdürlere atanmış ve child olmayan görevler veya sizin atadıklarınızı içerir.</div>
+</div>
+
+<div *ngIf="activeTab==='completed'">
+  <div *ngIf="completedTasks.length===0" class="empty">Tamamlanan görev yok</div>
+  <ul class="task-list">
+    <li *ngFor="let t of completedTasks; trackBy: trackByTaskId">
+      <div class="task">
+        <div class="title">{{ t.isim }}</div>
+        <div class="meta">Kime: {{ t.userid }} | Öncelik: {{ t.priority }} | Durum: {{ t.status }}</div>
+      </div>
+    </li>
+  </ul>
+</div>
+
+ 

@@ -1,0 +1,222 @@
+<div class="task-form-container">
+  <!-- Header -->
+  <div class="form-header">
+    <div class="header-content">
+      <button class="back-button" (click)="goBack()" type="button">
+        ← Geri Dön
+      </button>
+      <h1>✨ Yeni Görev Ekle</h1>
+      <p>Sistemde yeni bir görev oluşturun</p>
+    </div>
+  </div>
+
+  <!-- Success Message -->
+  <div *ngIf="success" class="alert alert-success">
+    <div class="alert-content">
+      <span class="alert-icon">✅</span>
+      <div class="alert-text">
+        <strong>Başarılı!</strong>
+        <p>{{ success }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="alert alert-error">
+    <div class="alert-content">
+      <span class="alert-icon">❌</span>
+      <div class="alert-text">
+        <strong>Hata!</strong>
+        <p>{{ error }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Form -->
+  <form [formGroup]="gorevForm" (ngSubmit)="onSubmit()" class="task-form">
+    <div class="form-card">
+      <div class="card-content">
+        
+        <!-- Görev Adı -->
+        <div class="form-group">
+          <label for="isim" class="form-label">
+            <span class="label-text">Görev Adı</span>
+            <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="isim"
+            formControlName="isim"
+            class="form-input"
+            [class.invalid]="isFieldInvalid('isim')"
+            [class.valid]="isFieldValid('isim')"
+            placeholder="Örn: Web sitesi tasarımı yapılacak"
+            maxlength="100">
+          <div class="input-footer">
+            <div *ngIf="getFieldError('isim')" class="error-message">
+              {{ getFieldError('isim') }}
+            </div>
+            <div class="char-counter">
+              {{ gorevForm.get('isim')?.value?.length || 0 }}/100
+            </div>
+          </div>
+        </div>
+
+        <!-- Açıklama -->
+        <div class="form-group">
+          <label for="description" class="form-label">
+            <span class="label-text">Görev Açıklaması</span>
+            <span class="required">*</span>
+          </label>
+          <textarea
+            id="description"
+            formControlName="description"
+            class="form-textarea"
+            [class.invalid]="isFieldInvalid('description')"
+            [class.valid]="isFieldValid('description')"
+            placeholder="Görevin detaylarını açıklayın. Ne yapılması gerekiyor, hangi adımlar takip edilecek?"
+            rows="5"
+            maxlength="500"></textarea>
+          <div class="input-footer">
+            <div *ngIf="getFieldError('description')" class="error-message">
+              {{ getFieldError('description') }}
+            </div>
+            <div class="char-counter">
+              {{ gorevForm.get('description')?.value?.length || 0 }}/500
+            </div>
+          </div>
+        </div>
+
+        <!-- İki sütunlu layout için wrapper -->
+        <div class="form-row">
+          <!-- Kullanıcı (Ekip Üyesi) Seçimi -->
+          <div class="form-group">
+            <label for="userid" class="form-label">
+              <span class="label-text">👤 {{ getSelectionLabel() }}</span>
+              <span class="required">*</span>
+            </label>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="userid"
+                class="form-input"
+                [value]="getSelectedUserDisplay()"
+                readonly
+                placeholder="Ekip üyesi seçiniz..."
+                (click)="openUserSelect()">
+              <button type="button" class="btn btn-secondary btn-select" (click)="openUserSelect()">🔍 Seç</button>
+            </div>
+            <div *ngIf="getFieldError('userid')" class="error-message">
+              {{ getFieldError('userid') }}
+            </div>
+          </div>
+
+          <!-- Öncelik -->
+          <div class="form-group">
+            <label for="priority" class="form-label">
+              <span class="label-text">🎯 Öncelik Seviyesi</span>
+              <span class="required">*</span>
+            </label>
+            <select
+              id="priority"
+              formControlName="priority"
+              class="form-select"
+              [class.invalid]="isFieldInvalid('priority')"
+              [class.valid]="isFieldValid('priority')">
+              <option *ngFor="let option of priorityOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <div *ngIf="getFieldError('priority')" class="error-message">
+              {{ getFieldError('priority') }}
+            </div>
+          </div>
+        </div>
+
+  <!-- Ekip Üyesi Seçim Modalı -->
+  <div class="modal-overlay" *ngIf="showUserSelectModal" (click)="closeUserSelect()">
+    <div class="modal user-select-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🔍 {{ getSelectionLabel() }} Seç</h3>
+        <button class="modal-close" (click)="closeUserSelect()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="user-list">
+          <div *ngFor="let u of candidateUsers; trackBy: trackByUserId" class="user-item" (click)="selectTeamMember(u)"
+               [class.selected]="gorevForm.get('userid')?.value === u.id">
+            <div class="user-info">
+              <div class="user-name">{{ u.fullName || u.username }}</div>
+              <div *ngIf="currentUser?.role === 'DIRECTOR' && u.managerType" class="manager-type">{{ u.managerType }}</div>
+              <div class="user-details">
+                <span class="user-id">ID: {{ u.id }}</span>
+                <span class="user-role">{{ currentUser?.role === 'DIRECTOR' ? 'Müdür' : 'Ekip Üyesi' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="candidateUsers.length === 0" class="empty-state">
+            <div class="empty-icon">👥</div>
+            <h3>Kayıt bulunamadı</h3>
+            <p>Liste boş.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeUserSelect()">❌ İptal</button>
+      </div>
+    </div>
+  </div>
+
+        <!-- Öncelik Görsel Göstergesi -->
+        <div class="priority-preview" *ngIf="selectedPriority">
+          <span class="preview-label">Seçilen Öncelik:</span>
+          <span 
+            class="priority-badge" 
+            [ngClass]="getPriorityClass()">
+            {{ getPriorityLabel() }}
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="resetForm()"
+        [disabled]="loading">
+        🔄 Formu Temizle
+      </button>
+      
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="!gorevForm.valid || loading">
+        <span *ngIf="!loading">💾 Görevi Kaydet</span>
+        <span *ngIf="loading">⏳ Kaydediliyor...</span>
+      </button>
+    </div>
+
+    <!-- Form Debug Info (Development) -->
+    <div class="form-debug" *ngIf="false"> <!-- Set to true for debugging -->
+      <h4>Form Debug Info:</h4>
+      <p><strong>Form Valid:</strong> {{ gorevForm.valid }}</p>
+      <p><strong>Form Value:</strong> {{ gorevForm.value | json }}</p>
+      <p><strong>Form Errors:</strong> {{ gorevForm.errors | json }}</p>
+    </div>
+
+  </form>
+
+  <!-- Help Section -->
+  <div class="help-section">
+    <h3>💡 İpuçları</h3>
+    <ul>
+      <li><strong>Görev Adı:</strong> Kısa ve anlaşılır bir başlık yazın (3-100 karakter)</li>
+      <li><strong>Açıklama:</strong> Görevin detaylarını eksiksiz açıklayın (10-500 karakter)</li>
+      <li><strong>Kullanıcı ID:</strong> Görevi atayacağınız kullanıcının ID numarası</li>
+      <li><strong>Öncelik:</strong> Görevin önem derecesini belirleyin</li>
+    </ul>
+  </div>
+</div>

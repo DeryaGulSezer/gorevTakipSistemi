@@ -1,0 +1,80 @@
+<div class="app-container">
+  <!-- Navigation Header (sadece login sayfasında değilse göster) -->
+  <header *ngIf="!isLoginPage()" class="app-header">
+    <div class="header-content">
+      <div class="logo">
+        <h1>📋 Görev Takip Sistemi</h1>
+        <p *ngIf="isDirector()">Direktör Paneli</p>
+        <p *ngIf="isManager()">Müdür Paneli</p>
+        <p *ngIf="isTeamMember()">Kullanıcı Paneli</p>
+      </div>
+      
+      <!-- Navigation & User Info -->
+      <div class="header-right">
+        <nav class="navigation">
+          <!-- Direktör Paneli Navigation -->
+          <ng-container *ngIf="isDirector()">
+            <a routerLink="/all-tasks" routerLinkActive="active" class="nav-link">
+              📊 Tüm Görevler
+            </a>
+            <a routerLink="/add-task" routerLinkActive="active" class="nav-link">
+              ➕ Görev Ekle
+            </a>
+            <a routerLink="/user-management" routerLinkActive="active" class="nav-link">
+              👥 Kullanıcı Yönetimi
+            </a>
+          </ng-container>
+          
+          <!-- Müdür Paneli Navigation (gelecekte genişletilecek) -->
+          <ng-container *ngIf="isManager()">
+            <a routerLink="/manager-panel" routerLinkActive="active" class="nav-link">
+              👨‍💼 Müdür Paneli
+            </a>
+            <a routerLink="/user-tasks" routerLinkActive="active" class="nav-link">
+              👤 Görevler
+            </a>
+          </ng-container>
+          
+          <!-- Ekip Üyesi Paneli Navigation -->
+          <ng-container *ngIf="isTeamMember()">
+            <a routerLink="/user-tasks" routerLinkActive="active" class="nav-link">
+              👤 Görevler
+            </a>
+          </ng-container>
+        </nav>
+
+        <!-- User Info & Logout -->
+        <div *ngIf="isLoggedIn && currentUser" class="user-section">
+          <div class="user-info">
+            <div class="user-avatar">
+              {{ getUserAvatar() }}
+            </div>
+            <div class="user-details">
+              <div class="user-name">{{ currentUser.fullName || currentUser.username }}</div>
+              <div class="user-role">{{ getUserRoleText() }}</div>
+            </div>
+          </div>
+          <button class="logout-button" (click)="logout()" title="Çıkış Yap">
+            🚪 Çıkış
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="app-main" [class.no-header]="isLoginPage()">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer (sadece login sayfasında değilse göster) -->
+  <footer *ngIf="!isLoginPage()" class="app-footer">
+    <div class="footer-content">
+      <p>&copy; 2024 Görev Takip Sistemi</p>
+      <div class="footer-info">
+        <span *ngIf="currentUser">Hoş geldin, {{ currentUser.username }}!</span>
+        <span>Sistem Durumu: ✅ Aktif</span>
+      </div>
+    </div>
+  </footer>
+</div>

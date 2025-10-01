@@ -1,0 +1,216 @@
+<div class="task-form-container">
+  <!-- Header -->
+  <div class="form-header">
+    <div class="header-content">
+      <button class="back-button" (click)="goBack()" type="button">
+        ← Geri Dön
+      </button>
+      <h1>✏️ Görev Düzenle</h1>
+      <p>Mevcut görevin bilgilerini güncelleyin</p>
+    </div>
+  </div>
+
+  <!-- Task Loading State -->
+  <div *ngIf="taskLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Görev bilgileri yükleniyor...</p>
+  </div>
+
+  <!-- Task Not Found -->
+  <div *ngIf="taskNotFound && !taskLoading" class="error-container">
+    <div class="not-found-message">
+      <span class="not-found-icon">❌</span>
+      <h3>Görev Bulunamadı</h3>
+      <p>Belirtilen ID'ye sahip görev sistemde mevcut değil.</p>
+      <button class="btn btn-primary" (click)="goBack()">
+        📋 Görev Listesine Dön
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content (Only show when task is loaded successfully) -->
+  <div *ngIf="!taskLoading && !taskNotFound">
+    <!-- Success Message -->
+    <div *ngIf="success" class="alert alert-success">
+      <div class="alert-content">
+        <span class="alert-icon">✅</span>
+        <div class="alert-text">
+          <strong>Başarılı!</strong>
+          <p>{{ success }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="alert alert-error">
+      <div class="alert-content">
+        <span class="alert-icon">❌</span>
+        <div class="alert-text">
+          <strong>Hata!</strong>
+          <p>{{ error }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Form -->
+    <form [formGroup]="gorevForm" (ngSubmit)="onSubmit()" class="task-form">
+      <div class="form-card">
+        <div class="card-header">
+          <h3>Görev Bilgileri (ID: {{ currentTaskId }})</h3>
+          <p>Aşağıdaki alanları düzenleyebilirsiniz</p>
+        </div>
+        
+        <div class="card-content">
+          
+          <!-- Görev Adı -->
+          <div class="form-group">
+            <label for="isim" class="form-label">
+              <span class="label-text">Görev Adı</span>
+              <span class="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="isim"
+              formControlName="isim"
+              class="form-input"
+              [class.invalid]="isFieldInvalid('isim')"
+              [class.valid]="isFieldValid('isim')"
+              placeholder="Örn: Web sitesi tasarımı yapılacak"
+              maxlength="100">
+            <div class="input-footer">
+              <div *ngIf="getFieldError('isim')" class="error-message">
+                {{ getFieldError('isim') }}
+              </div>
+              <div class="char-counter">
+                {{ gorevForm.get('isim')?.value?.length || 0 }}/100
+              </div>
+            </div>
+          </div>
+
+          <!-- Açıklama -->
+          <div class="form-group">
+            <label for="description" class="form-label">
+              <span class="label-text">Görev Açıklaması</span>
+              <span class="required">*</span>
+            </label>
+            <textarea
+              id="description"
+              formControlName="description"
+              class="form-textarea"
+              [class.invalid]="isFieldInvalid('description')"
+              [class.valid]="isFieldValid('description')"
+              placeholder="Görevin detaylarını açıklayın. Ne yapılması gerekiyor, hangi adımlar takip edilecek?"
+              rows="5"
+              maxlength="500"></textarea>
+            <div class="input-footer">
+              <div *ngIf="getFieldError('description')" class="error-message">
+                {{ getFieldError('description') }}
+              </div>
+              <div class="char-counter">
+                {{ gorevForm.get('description')?.value?.length || 0 }}/500
+              </div>
+            </div>
+          </div>
+
+          <!-- İki sütunlu layout için wrapper -->
+          <div class="form-row">
+            <!-- Kullanıcı ID -->
+            <div class="form-group">
+              <label for="userid" class="form-label">
+                <span class="label-text">👤 Kullanıcı ID</span>
+                <span class="required">*</span>
+              </label>
+              <input
+                type="number"
+                id="userid"
+                formControlName="userid"
+                class="form-input"
+                [class.invalid]="isFieldInvalid('userid')"
+                [class.valid]="isFieldValid('userid')"
+                placeholder="Örn: 1"
+                min="1">
+              <div *ngIf="getFieldError('userid')" class="error-message">
+                {{ getFieldError('userid') }}
+              </div>
+            </div>
+
+            <!-- Öncelik -->
+            <div class="form-group">
+              <label for="priority" class="form-label">
+                <span class="label-text">🎯 Öncelik Seviyesi</span>
+                <span class="required">*</span>
+              </label>
+              <select
+                id="priority"
+                formControlName="priority"
+                class="form-select"
+                [class.invalid]="isFieldInvalid('priority')"
+                [class.valid]="isFieldValid('priority')">
+                <option *ngFor="let option of priorityOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+              <div *ngIf="getFieldError('priority')" class="error-message">
+                {{ getFieldError('priority') }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Öncelik Görsel Göstergesi -->
+          <div class="priority-preview" *ngIf="selectedPriority">
+            <span class="preview-label">Seçilen Öncelik:</span>
+            <span 
+              class="priority-badge" 
+              [ngClass]="getPriorityClass()">
+              {{ getPriorityLabel() }}
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="resetForm()"
+          [disabled]="loading || taskLoading">
+          🔄 Orijinal Değerlere Dön
+        </button>
+        
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="!gorevForm.valid || loading">
+          <span *ngIf="!loading">💾 Görevi Güncelle</span>
+          <span *ngIf="loading">⏳ Güncelleniyor...</span>
+        </button>
+      </div>
+
+      <!-- Form Debug Info (Development) -->
+      <div class="form-debug" *ngIf="false"> <!-- Set to true for debugging -->
+        <h4>Form Debug Info:</h4>
+        <p><strong>Form Valid:</strong> {{ gorevForm.valid }}</p>
+        <p><strong>Form Value:</strong> {{ gorevForm.value | json }}</p>
+        <p><strong>Current Task ID:</strong> {{ currentTaskId }}</p>
+        <p><strong>Task Loading:</strong> {{ taskLoading }}</p>
+        <p><strong>Task Not Found:</strong> {{ taskNotFound }}</p>
+      </div>
+
+    </form>
+
+    <!-- Help Section -->
+    <div class="help-section">
+      <h3>💡 Düzenleme İpuçları</h3>
+      <ul>
+        <li><strong>Görev Adı:</strong> Kısa ve anlaşılır bir başlık yazın (3-100 karakter)</li>
+        <li><strong>Açıklama:</strong> Görevin detaylarını eksiksiz açıklayın (10-500 karakter)</li>
+        <li><strong>Kullanıcı ID:</strong> Görevi atayacağınız kullanıcının ID numarası</li>
+        <li><strong>Öncelik:</strong> Görevin önem derecesini belirleyin</li>
+        <li><strong>İptal:</strong> Değişiklikleri kaydetmeden çıkmak için "Geri Dön" butonunu kullanın</li>
+        <li><strong>Sıfırla:</strong> Formu orijinal değerlere döndürmek için "Orijinal Değerlere Dön" butonunu kullanın</li>
+      </ul>
+    </div>
+  </div>
+</div>
