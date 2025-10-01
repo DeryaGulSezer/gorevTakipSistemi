@@ -195,7 +195,7 @@ Bu proje kişisel kullanım içindir.
 
 ## 👨‍💻 Geliştirici
 
-Erdemir
+Derya Gül Sezer
 
 ---
 
